@@ -1,21 +1,55 @@
 <script lang="ts" setup>
 import { ArrowRight, BookOpen, Settings } from 'lucide-vue-next'
-import BaseAlert from '~/shared/ui/BaseAlert/BaseAlert.vue'
-import BaseAvatar from '~/shared/ui/BaseAvatar/BaseAvatar.vue'
-import BaseBadge from '~/shared/ui/BaseBadge/BaseBadge.vue'
-import BaseButton from '~/shared/ui/BaseButton/BaseButton.vue'
-import BaseCard from '~/shared/ui/BaseCard/BaseCard.vue'
-import BaseCheckbox from '~/shared/ui/BaseCheckbox/BaseCheckbox.vue'
-import BaseContainer from '~/shared/ui/BaseContainer/BaseContainer.vue'
-import BaseEmptyState from '~/shared/ui/BaseEmptyState/BaseEmptyState.vue'
-import BaseIconButton from '~/shared/ui/BaseIconButton/BaseIconButton.vue'
-import BaseInput from '~/shared/ui/BaseInput/BaseInput.vue'
-import BaseProgress from '~/shared/ui/BaseProgress/BaseProgress.vue'
-import BaseRadio from '~/shared/ui/BaseRadio/BaseRadio.vue'
-import BaseSkeleton from '~/shared/ui/BaseSkeleton/BaseSkeleton.vue'
-import BaseSpinner from '~/shared/ui/BaseSpinner/BaseSpinner.vue'
-import BaseStack from '~/shared/ui/BaseStack/BaseStack.vue'
-import BaseSwitch from '~/shared/ui/BaseSwitch/BaseSwitch.vue'
+import {
+  Dialog,
+  BaseAlert,
+  BaseAvatar,
+  BaseBadge,
+  BaseButton,
+  BaseCard,
+  BaseCheckbox,
+  BaseContainer,
+  BaseEmptyState,
+  BaseIconButton,
+  BaseInput,
+  BaseProgress,
+  BaseRadio,
+  BaseSkeleton,
+  BaseSpinner,
+  BaseStack,
+  BaseSwitch,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  Dropdown,
+  DropdownContent,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+  DropdownTrigger,
+  DropdownLabel,
+  DropdownItem,
+  DropdownSeparator,
+  SelectTrigger,
+  Select,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+  SelectLabel,
+  SelectItem,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '~/shared/ui'
 </script>
 
 <template>
@@ -83,5 +117,105 @@ import BaseSwitch from '~/shared/ui/BaseSwitch/BaseSwitch.vue'
       <h1>Мои предметы</h1>
       <p>Продолжите обучение</p>
     </BaseStack>
+
+    <Dialog>
+      <DialogTrigger>
+        <BaseButton> Открыть </BaseButton>
+      </DialogTrigger>
+
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle> Завершить урок? </DialogTitle>
+
+          <DialogDescription> Ваш прогресс будет сохранён. </DialogDescription>
+        </DialogHeader>
+
+        <div class="px-6 py-4">Контент</div>
+
+        <DialogFooter>
+          <DialogClose>
+            <BaseButton variant="ghost"> Отмена </BaseButton>
+          </DialogClose>
+
+          <BaseButton> Продолжить </BaseButton>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <div class="ml-20">
+      <Dropdown>
+        <DropdownTrigger>
+          <BaseButton variant="ghost"> Действия </BaseButton>
+        </DropdownTrigger>
+
+        <DropdownContent>
+          <DropdownLabel> Управление </DropdownLabel>
+
+          <DropdownItem> Редактировать </DropdownItem>
+
+          <DropdownItem> Архивировать </DropdownItem>
+
+          <DropdownSeparator />
+
+          <DropdownItem destructive> Удалить </DropdownItem>
+        </DropdownContent>
+      </Dropdown>
+    </div>
+
+    <Select>
+      <SelectTrigger>
+        <SelectValue placeholder="Выберите предмет" />
+      </SelectTrigger>
+
+      <SelectContent>
+        <SelectGroup>
+          <SelectLabel> Предметы </SelectLabel>
+
+          <SelectItem value="math"> Математика </SelectItem>
+
+          <SelectItem value="physics"> Физика </SelectItem>
+
+          <SelectItem value="history"> История </SelectItem>
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+
+    <Tabs>
+      <TabsList>
+        <TabsTrigger value="all"> Все </TabsTrigger>
+
+        <TabsTrigger value="completed"> Завершённые </TabsTrigger>
+
+        <TabsTrigger value="progress"> В процессе </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="all"> ... </TabsContent>
+
+      <TabsContent value="completed"> ... </TabsContent>
+
+      <TabsContent value="progress"> ... </TabsContent>
+    </Tabs>
+
+    <Accordion type="single" collapsible>
+      <AccordionItem value="notes">
+        <AccordionTrigger> Конспект урока </AccordionTrigger>
+
+        <AccordionContent> Основной материал... </AccordionContent>
+      </AccordionItem>
+
+      <AccordionItem value="materials">
+        <AccordionTrigger> Дополнительные материалы </AccordionTrigger>
+
+        <AccordionContent> ... </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+
+    <Tooltip>
+      <TooltipTrigger>
+        <BaseIconButton :icon="Settings" label="Настройки" />
+      </TooltipTrigger>
+
+      <TooltipContent> Настройки профиля </TooltipContent>
+    </Tooltip>
   </BaseContainer>
 </template>

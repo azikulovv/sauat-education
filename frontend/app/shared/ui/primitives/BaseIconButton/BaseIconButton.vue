@@ -43,9 +43,9 @@ defineOptions({
         'size-9': size === 'md',
         'size-10': size === 'lg',
 
-        'bg-surface text-text-primary hover:bg-(--color-surface-hover)': variant === 'default',
+        'bg-surface text-text-primary hover:bg-surface-hover': variant === 'default',
 
-        'text-text-secondary hover:bg-(--color-bg-subtle) hover:text-text-primary':
+        'text-text-secondary hover:bg-bg-subtle hover:text-text-primary':
           variant === 'ghost',
 
         'text-error hover:bg-(--color-error-subtle)': variant === 'danger',

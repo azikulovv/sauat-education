@@ -53,10 +53,10 @@ defineOptions({
 
         'bg-primary text-white hover:bg-(--color-primary-hover)': variant === 'primary',
 
-        'border-border bg-surface text-text-primary hover:bg-(--color-surface-hover)':
+        'border-border bg-surface text-text-primary hover:bg-surface-hover':
           variant === 'secondary',
 
-        'text-text-secondary hover:bg-(--color-bg-subtle) hover:text-text-primary':
+        'text-text-secondary hover:bg-bg-subtle hover:text-text-primary':
           variant === 'ghost',
 
         'bg-error text-white hover:bg-(--color-error-hover)': variant === 'danger',
