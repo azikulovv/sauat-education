@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { provide, ref, watch } from 'vue'
 import { dialogKey } from './context'
 
 interface Props {
@@ -14,22 +13,43 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
+  open: []
+  close: []
 }>()
 
 const open = ref(props.modelValue ?? props.defaultOpen)
 
+const baseId = useId()
+
+const contentId = `${baseId}-content`
+
+const titleId = `${baseId}-title`
+
+const descriptionId = `${baseId}-description`
+
 watch(
   () => props.modelValue,
   (value) => {
-    if (value !== undefined) {
+    if (value !== undefined && value !== open.value) {
       open.value = value
     }
   },
 )
 
 function setOpen(value: boolean) {
+  if (value === open.value) {
+    return
+  }
+
   open.value = value
+
   emit('update:modelValue', value)
+
+  if (value) {
+    emit('open')
+  } else {
+    emit('close')
+  }
 }
 
 function close() {
@@ -38,6 +58,9 @@ function close() {
 
 provide(dialogKey, {
   open,
+  contentId,
+  titleId,
+  descriptionId,
   setOpen,
   close,
 })

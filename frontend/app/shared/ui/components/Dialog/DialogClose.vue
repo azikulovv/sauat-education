@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { inject } from 'vue'
 import { dialogKey } from './context'
 
 const dialog = inject(dialogKey)

@@ -1,14 +1,5 @@
 <script setup lang="ts">
-import { inject } from 'vue'
 import { dialogKey } from './context'
-
-interface Props {
-  as?: string
-}
-
-withDefaults(defineProps<Props>(), {
-  as: 'button',
-})
 
 const dialog = inject(dialogKey)
 
@@ -18,7 +9,12 @@ if (!dialog) {
 </script>
 
 <template>
-  <component :is="as" type="button" @click="dialog.setOpen(true)">
+  <button
+    type="button"
+    :aria-haspopup="'dialog'"
+    :aria-expanded="dialog.open.value"
+    @click="dialog.setOpen(true)"
+  >
     <slot />
-  </component>
+  </button>
 </template>

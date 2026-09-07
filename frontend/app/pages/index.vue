@@ -127,7 +127,7 @@ import {
         <DialogHeader>
           <DialogTitle> Завершить урок? </DialogTitle>
 
-          <DialogDescription> Ваш прогресс будет сохранён. </DialogDescription>
+          <DialogDescription> После завершения урока прогресс будет сохранён. </DialogDescription>
         </DialogHeader>
 
         <div class="px-6 py-4">Контент</div>
@@ -137,7 +137,7 @@ import {
             <BaseButton variant="ghost"> Отмена </BaseButton>
           </DialogClose>
 
-          <BaseButton> Продолжить </BaseButton>
+          <BaseButton> Завершить </BaseButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>
