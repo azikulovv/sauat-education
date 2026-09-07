@@ -72,7 +72,7 @@ function onInput(event: Event) {
           'border-error focus:border-error focus:ring-3 focus:ring-(--color-error-subtle)':
             hasError,
 
-          'border-border hover:border-(--color-border-strong) focus:border-primary focus:ring-3 focus:ring-(--color-primary-subtle)':
+          'border-border hover:border-border-strong focus:border-primary focus:ring-3 focus:ring-(--color-primary-subtle)':
             !hasError,
         },
       ]"
