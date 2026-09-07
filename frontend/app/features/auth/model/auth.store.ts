@@ -28,6 +28,10 @@ export const useAuthStore = () => {
   const status = useState<AuthStatus>('auth:status', () => 'idle')
   const error = useState<string | null>('auth:error', () => null)
   const initialized = useState('auth:initialized', () => false)
+  const persistedAuth = useCookie<PersistedAuth | null>('sauat-auth', {
+    default: () => null,
+    sameSite: 'lax',
+  })
 
   const isAuthenticated = computed(() => Boolean(user.value && accessToken.value))
 
@@ -36,21 +40,9 @@ export const useAuthStore = () => {
       return
     }
 
-    if (import.meta.client) {
-      const storedAuth = localStorage.getItem('sauat-auth')
-
-      if (storedAuth) {
-        try {
-          const parsed: unknown = JSON.parse(storedAuth)
-
-          if (isPersistedAuth(parsed)) {
-            user.value = parsed.user
-            accessToken.value = parsed.accessToken
-          }
-        } catch {
-          localStorage.removeItem('sauat-auth')
-        }
-      }
+    if (isPersistedAuth(persistedAuth.value)) {
+      user.value = persistedAuth.value.user
+      accessToken.value = persistedAuth.value.accessToken
     }
 
     initialized.value = true
@@ -67,12 +59,7 @@ export const useAuthStore = () => {
       accessToken.value = result.accessToken
       status.value = 'success'
 
-      if (import.meta.client) {
-        localStorage.setItem(
-          'sauat-auth',
-          JSON.stringify({ user: result.user, accessToken: result.accessToken }),
-        )
-      }
+      persistedAuth.value = { user: result.user, accessToken: result.accessToken }
     } catch (cause) {
       status.value = 'error'
       error.value = cause instanceof Error ? cause.message : 'Не удалось войти в аккаунт.'
@@ -85,9 +72,7 @@ export const useAuthStore = () => {
     status.value = 'idle'
     error.value = null
 
-    if (import.meta.client) {
-      localStorage.removeItem('sauat-auth')
-    }
+    persistedAuth.value = null
   }
 
   return {

@@ -73,6 +73,16 @@ export function useQuizAnswer(quiz: MaybeRefOrGetter<Quiz>) {
     answerState.value = 'idle'
   }
 
+  const previousQuestion = () => {
+    if (questionIndex.value === 0 || answerState.value === 'completed') {
+      return
+    }
+
+    questionIndex.value -= 1
+    selectedAnswer.value = null
+    answerState.value = 'idle'
+  }
+
   const result = computed<QuizAnswerResult>(() => {
     const currentQuiz = toValue(quiz)
     const total = currentQuiz.questions.length
@@ -101,6 +111,7 @@ export function useQuizAnswer(quiz: MaybeRefOrGetter<Quiz>) {
     selectedAnswer,
     answerState,
     isLastQuestion,
+    previousQuestion,
     result,
     selectAnswer,
     submitAnswer,

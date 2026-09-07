@@ -1,51 +1,84 @@
 <script lang="ts" setup>
-import { BookOpen, ShieldCheck } from 'lucide-vue-next'
-import { BaseCard, BaseContainer } from '~/shared/ui'
-import { LanguageSwitcher } from '~/features/language-switching'
-import { LoginForm } from '~/features/auth'
+import { computed, ref } from 'vue'
+import { BaseAlert, BaseContainer } from '~/shared/ui'
+import { currentStudent } from '~/entities/student'
+import { subjects } from '~/entities/subject'
+import { currentLesson } from '~/entities/lesson'
+import { overallProgress } from '~/entities/progress'
+import {
+  DashboardContinueLearning,
+  DashboardOverview,
+  DashboardSubjects,
+} from '~/widgets/dashboard'
+import { AppShell } from '~/widgets/app-shell'
+import type { Subject } from '~/entities/subject'
 
-const handleLogin = () => navigateTo('/student')
+definePageMeta({
+  layout: 'default',
+  middleware: 'auth',
+})
+
+useHead({
+  title: 'Главная | Sauat Education',
+  meta: [{ name: 'description', content: 'Ваш прогресс и текущие учебные материалы.' }],
+})
+
+const selectedSubjectId = ref<string | null>(null)
+const isLessonSelected = ref(false)
+
+const selectedSubject = computed(() =>
+  subjects.find((subject) => subject.id === selectedSubjectId.value),
+)
+
+const openSubject = (subject: Subject) => {
+  selectedSubjectId.value = subject.id
+  void navigateTo(`/subjects/${subject.id}`)
+}
+
+const continueLearning = () => {
+  isLessonSelected.value = true
+  void navigateTo(`/subjects/${currentLesson.subjectId}/lessons/${currentLesson.id}`)
+}
+
+const handleAlertClose = () => {
+  selectedSubjectId.value = null
+  isLessonSelected.value = false
+}
 </script>
 
 <template>
-  <main class="min-h-screen bg-bg">
-    <BaseContainer size="md">
-      <div class="flex min-h-screen flex-col py-6 sm:py-8">
-        <header class="flex items-center justify-between gap-4">
-          <div class="flex items-center gap-3">
-            <span class="flex size-8 items-center justify-center rounded-md bg-primary text-white">
-              <BookOpen class="size-4" aria-hidden="true" />
-            </span>
-            <span class="text-sm font-bold tracking-tight text-text-primary">Sauat Education</span>
-          </div>
+  <AppShell active="dashboard">
+    <BaseContainer>
+      <div class="py-8 pb-20 sm:py-10 lg:py-12">
+        <DashboardOverview
+          :student="currentStudent"
+          :progress="overallProgress"
+          :current-lesson="currentLesson"
+        />
 
-          <LanguageSwitcher />
-        </header>
-
-        <div class="flex flex-1 items-center justify-center py-12">
-          <div class="w-full max-w-md">
-            <div class="mb-6 text-center">
-              <div
-                class="mx-auto flex size-12 items-center justify-center rounded-lg bg-primary-subtle text-primary"
-              >
-                <ShieldCheck class="size-6" aria-hidden="true" />
-              </div>
-              <h1 class="mt-5 text-h1 text-text-primary">С возвращением</h1>
-              <p class="mt-2 text-body-sm text-text-secondary">
-                Войдите, чтобы продолжить обучение.
-              </p>
-            </div>
-
-            <BaseCard padding="lg">
-              <LoginForm @success="handleLogin" />
-            </BaseCard>
-
-            <p class="mt-5 text-center text-xs text-text-tertiary">
-              Демо-режим: используйте любой email и пароль от 6 символов.
-            </p>
-          </div>
+        <div class="mt-12">
+          <DashboardSubjects :subjects="subjects" @subject-click="openSubject" />
         </div>
+
+        <div class="mt-12">
+          <DashboardContinueLearning :lesson="currentLesson" @continue="continueLearning" />
+        </div>
+
+        <BaseAlert
+          v-if="selectedSubject || isLessonSelected"
+          class="mt-6"
+          variant="info"
+          :title="
+            selectedSubject
+              ? `Выбран предмет: ${selectedSubject.title}`
+              : 'Урок готов к продолжению'
+          "
+          closable
+          @close="handleAlertClose"
+        >
+          Навигация по учебным материалам доступна из карточек предметов и уроков.
+        </BaseAlert>
       </div>
     </BaseContainer>
-  </main>
+  </AppShell>
 </template>

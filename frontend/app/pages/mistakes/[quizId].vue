@@ -1,73 +1,79 @@
 <script lang="ts" setup>
-import { ChevronLeft, Lightbulb } from 'lucide-vue-next'
-import {
-  BaseAlert,
-  BaseButton,
-  BaseCard,
-  BaseContainer,
-  BaseEmptyState,
-  BaseSkeleton,
-} from '~/shared/ui'
-import { QuizQuestion } from '~/entities/quiz'
+import { ChevronLeft } from 'lucide-vue-next'
+import { BaseAlert, BaseButton, BaseContainer, BaseEmptyState, BaseSkeleton } from '~/shared/ui'
+import { getLesson } from '~/shared/api/lessons'
 import { getQuiz } from '~/shared/api/quizzes'
+import { useQuizReview } from '~/features/quiz-answer'
+import { AppShell } from '~/widgets/app-shell'
+import { QuizReview } from '~/widgets/quiz-review'
 
 definePageMeta({
-  layout: 'student',
+  layout: 'default',
+  middleware: 'auth',
 })
 
 const route = useRoute()
 const quizId = String(route.params.quizId)
+const reviewResult = useQuizReview(quizId)
+
 const {
-  data: quiz,
+  data: reviewPage,
   pending,
   error,
-} = await useAsyncData(`quiz-review-${quizId}`, () => getQuiz(quizId))
+} = await useAsyncData(`quiz-review-${quizId}`, async () => {
+  const quiz = await getQuiz(quizId)
+  const lesson = quiz ? await getLesson(quiz.lessonId) : undefined
 
-const goBack = () => navigateTo(`/quiz/${quizId}`)
+  return { quiz, lesson }
+})
+
+useHead(() => ({
+  title: reviewPage.value?.quiz ? `Разбор: ${reviewPage.value.quiz.title}` : 'Разбор ошибок',
+}))
+
+const goBackToQuiz = () => navigateTo(`/quiz/${quizId}`)
+const goBackToLesson = () => {
+  const lesson = reviewPage.value?.lesson
+
+  if (!lesson) {
+    return navigateTo('/')
+  }
+
+  return navigateTo(`/subjects/${lesson.subjectId}/lessons/${lesson.id}`)
+}
 </script>
 
 <template>
-  <main>
+  <AppShell active="subjects">
     <BaseContainer size="md">
       <div class="py-8 pb-20 sm:py-10 lg:py-12">
-        <BaseButton variant="ghost" size="sm" :leading-icon="ChevronLeft" @click="goBack">
-          Вернуться к тесту
-        </BaseButton>
-
-        <div class="mt-6">
-          <p class="text-overline text-primary">Разбор ответов</p>
-          <h1 class="mt-2 text-h1 text-text-primary">Повторите сложные вопросы</h1>
-          <p class="mt-2 text-body-sm text-text-secondary">
-            Здесь собраны правильные ответы и короткие объяснения по материалу теста.
-          </p>
+        <div class="flex flex-wrap gap-2">
+          <BaseButton variant="ghost" size="sm" :leading-icon="ChevronLeft" @click="goBackToQuiz">
+            Вернуться к тесту
+          </BaseButton>
+          <BaseButton variant="ghost" size="sm" @click="goBackToLesson">К уроку</BaseButton>
         </div>
 
-        <BaseSkeleton v-if="pending" class="mt-8" variant="rect" width="100%" height="500px" />
+        <BaseSkeleton v-if="pending" class="mt-6" variant="rect" width="100%" height="500px" />
 
         <BaseAlert
           v-else-if="error"
-          class="mt-8"
+          class="mt-6"
           variant="error"
           title="Не удалось загрузить разбор"
         >
-          {{ error.message }}
+          Не удалось получить данные теста. Попробуйте открыть разбор снова.
         </BaseAlert>
 
         <BaseEmptyState
-          v-else-if="!quiz"
-          class="mt-8"
-          :icon="Lightbulb"
+          v-else-if="!reviewPage?.quiz"
+          class="mt-6"
           title="Тест не найден"
           description="Попробуйте открыть разбор из результата теста."
         />
 
-        <div v-else class="mt-8 space-y-5">
-          <BaseCard v-for="(question, index) in quiz.questions" :key="question.id">
-            <p class="mb-4 text-xs font-semibold text-text-tertiary">Вопрос {{ index + 1 }}</p>
-            <QuizQuestion :question="question" show-result disabled />
-          </BaseCard>
-        </div>
+        <QuizReview v-else class="mt-6" :quiz="reviewPage.quiz" :result="reviewResult" />
       </div>
     </BaseContainer>
-  </main>
+  </AppShell>
 </template>

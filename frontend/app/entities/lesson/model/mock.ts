@@ -15,6 +15,7 @@ export const currentLesson: Lesson = {
     { id: 'intro', label: 'Введение', time: '00:00' },
     { id: 'formula', label: 'Формула дискриминанта', time: '06:42' },
     { id: 'practice', label: 'Практика', time: '15:10' },
+    { id: 'summary', label: 'Итоги', time: '21:40' },
   ],
 }
 

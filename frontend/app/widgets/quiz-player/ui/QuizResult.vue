@@ -11,6 +11,7 @@ interface Props {
 defineProps<Props>()
 
 defineEmits<{
+  back: []
   review: []
   retry: []
 }>()
@@ -29,8 +30,14 @@ defineEmits<{
       Правильных ответов: {{ result.score }} из {{ result.total }}. Для прохождения нужно
       {{ passingScore }}%.
     </p>
+    <p class="mt-1 text-xs text-text-tertiary">
+      Неправильных ответов: {{ result.total - result.score }}
+    </p>
 
     <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+      <BaseButton variant="ghost" :leading-icon="ArrowLeft" @click="$emit('back')">
+        Вернуться к уроку
+      </BaseButton>
       <BaseButton variant="secondary" :leading-icon="ArrowLeft" @click="$emit('review')">
         Разобрать ответы
       </BaseButton>

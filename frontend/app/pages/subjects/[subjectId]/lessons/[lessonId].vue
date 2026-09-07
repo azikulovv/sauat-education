@@ -3,10 +3,12 @@ import { ChevronLeft } from 'lucide-vue-next'
 import { BaseAlert, BaseButton, BaseContainer, BaseSkeleton } from '~/shared/ui'
 import { getLesson } from '~/shared/api/lessons'
 import { getQuizForLesson } from '~/shared/api/quizzes'
+import { AppShell } from '~/widgets/app-shell'
 import { LessonViewer } from '~/widgets/lesson-viewer'
 
 definePageMeta({
-  layout: 'student',
+  layout: 'default',
+  middleware: 'auth',
 })
 
 const route = useRoute()
@@ -26,12 +28,18 @@ const {
   }
 })
 
+useHead(() => ({
+  title: lessonPage.value?.lesson
+    ? `${lessonPage.value.lesson.title} | Sauat Education`
+    : 'Урок | Sauat Education',
+}))
+
 const goBack = () => navigateTo(`/subjects/${subjectId}`)
 const openQuiz = (quizId: string) => navigateTo(`/quiz/${quizId}`)
 </script>
 
 <template>
-  <main>
+  <AppShell active="subjects">
     <BaseContainer size="lg">
       <div class="py-8 pb-20 sm:py-10 lg:py-12">
         <BaseButton variant="ghost" size="sm" :leading-icon="ChevronLeft" @click="goBack">
@@ -41,7 +49,7 @@ const openQuiz = (quizId: string) => navigateTo(`/quiz/${quizId}`)
         <BaseSkeleton v-if="pending" class="mt-6" variant="rect" width="100%" height="520px" />
 
         <BaseAlert v-else-if="error" class="mt-6" variant="error" title="Не удалось загрузить урок">
-          {{ error.message }}
+          Не удалось получить данные урока. Попробуйте ещё раз.
         </BaseAlert>
 
         <BaseAlert
@@ -62,5 +70,5 @@ const openQuiz = (quizId: string) => navigateTo(`/quiz/${quizId}`)
         />
       </div>
     </BaseContainer>
-  </main>
+  </AppShell>
 </template>

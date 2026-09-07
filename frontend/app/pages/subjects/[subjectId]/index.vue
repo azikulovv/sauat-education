@@ -1,20 +1,15 @@
 <script lang="ts" setup>
 import { BookOpen, ChevronLeft } from 'lucide-vue-next'
-import {
-  BaseAlert,
-  BaseButton,
-  BaseCard,
-  BaseContainer,
-  BaseEmptyState,
-  BaseSkeleton,
-} from '~/shared/ui'
-import { LessonCard } from '~/entities/lesson'
-import { SubjectProgress } from '~/entities/subject'
+import { BaseAlert, BaseButton, BaseContainer, BaseEmptyState, BaseSkeleton } from '~/shared/ui'
 import { getLessons } from '~/shared/api/lessons'
 import { getSubject } from '~/shared/api/subjects'
+import { AppShell } from '~/widgets/app-shell'
+import { SubjectDetail } from '~/widgets/subject-detail'
+import type { Lesson } from '~/entities/lesson'
 
 definePageMeta({
-  layout: 'student',
+  layout: 'default',
+  middleware: 'auth',
 })
 
 const route = useRoute()
@@ -28,12 +23,16 @@ const [
   useAsyncData(`subject-${subjectId}-lessons`, () => getLessons(subjectId)),
 ])
 
+useHead(() => ({
+  title: subject.value ? `${subject.value.title} | Sauat Education` : 'Предмет | Sauat Education',
+}))
+
 const goBack = () => navigateTo('/subjects')
-const openLesson = (lessonId: string) => navigateTo(`/subjects/${subjectId}/lessons/${lessonId}`)
+const openLesson = (lesson: Lesson) => navigateTo(`/subjects/${subjectId}/lessons/${lesson.id}`)
 </script>
 
 <template>
-  <main>
+  <AppShell active="subjects">
     <BaseContainer>
       <div class="py-8 pb-20 sm:py-10 lg:py-12">
         <BaseButton variant="ghost" size="sm" :leading-icon="ChevronLeft" @click="goBack">
@@ -45,7 +44,7 @@ const openLesson = (lessonId: string) => navigateTo(`/subjects/${subjectId}/less
           class="mt-6"
           variant="rect"
           width="100%"
-          height="180px"
+          height="520px"
         />
 
         <BaseAlert
@@ -54,68 +53,27 @@ const openLesson = (lessonId: string) => navigateTo(`/subjects/${subjectId}/less
           variant="error"
           title="Не удалось загрузить предмет"
         >
-          {{ subjectError.message }}
+          Не удалось получить данные предмета. Попробуйте ещё раз.
         </BaseAlert>
 
+        <SubjectDetail
+          v-else-if="subject"
+          class="mt-6"
+          :subject="subject"
+          :lessons="lessons ?? []"
+          :loading="lessonsPending"
+          :error="lessonsError?.message ?? null"
+          @lesson-click="openLesson"
+        />
+
         <BaseEmptyState
-          v-else-if="!subject"
+          v-else
           class="mt-6"
           :icon="BookOpen"
           title="Предмет не найден"
-          description="Проверьте ссылку или вернитесь к списку предметов."
+          description="Вернитесь к списку предметов и выберите доступный предмет."
         />
-
-        <template v-else>
-          <BaseCard class="mt-6">
-            <p class="text-overline text-primary">Предмет</p>
-            <h1 class="mt-2 text-h1 text-text-primary">{{ subject.title }}</h1>
-            <p class="mt-2 max-w-2xl text-body-sm leading-6 text-text-secondary">
-              {{ subject.description }}
-            </p>
-            <div class="mt-6 max-w-xl">
-              <SubjectProgress :subject="subject" />
-            </div>
-          </BaseCard>
-
-          <section class="mt-10" aria-labelledby="subject-lessons-title">
-            <div class="mb-5">
-              <h2 id="subject-lessons-title" class="text-h2 text-text-primary">Темы и уроки</h2>
-              <p class="mt-1 text-sm text-text-secondary">
-                {{ subject.completedTopics }} из {{ subject.totalTopics }} тем пройдено
-              </p>
-            </div>
-
-            <BaseAlert v-if="lessonsError" variant="error" title="Не удалось загрузить уроки">
-              {{ lessonsError.message }}
-            </BaseAlert>
-
-            <div v-else-if="lessonsPending" class="grid gap-4 lg:grid-cols-2">
-              <BaseSkeleton
-                v-for="item in 2"
-                :key="item"
-                variant="rect"
-                width="100%"
-                height="220px"
-              />
-            </div>
-
-            <BaseEmptyState
-              v-else-if="!lessons?.length"
-              title="Уроков пока нет"
-              description="Материалы для этого предмета появятся здесь."
-            />
-
-            <div v-else class="grid gap-4 lg:grid-cols-2">
-              <LessonCard
-                v-for="lesson in lessons"
-                :key="lesson.id"
-                :lesson="lesson"
-                @click="openLesson(lesson.id)"
-              />
-            </div>
-          </section>
-        </template>
       </div>
     </BaseContainer>
-  </main>
+  </AppShell>
 </template>

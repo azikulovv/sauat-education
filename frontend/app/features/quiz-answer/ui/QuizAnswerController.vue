@@ -44,8 +44,16 @@ const handleNext = () => {
     />
 
     <div
-      class="flex flex-col-reverse gap-3 border-t border-border-subtle pt-5 sm:flex-row sm:justify-end"
+      class="flex flex-col-reverse gap-3 border-t border-border-subtle pt-5 sm:flex-row sm:justify-between"
     >
+      <BaseButton
+        v-if="answer.questionIndex.value > 0 && !isAnswerChecked"
+        variant="ghost"
+        @click="answer.previousQuestion"
+      >
+        Предыдущий вопрос
+      </BaseButton>
+
       <BaseButton
         v-if="isAnswerChecked"
         variant="secondary"
