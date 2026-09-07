@@ -1,21 +1,15 @@
 <script setup lang="ts">
-interface Props {
-  inset?: boolean
-}
+import { inject } from 'vue'
 
-withDefaults(defineProps<Props>(), {
-  inset: false,
-})
+const group = inject<{
+  id: string
+}>('select-group')
 </script>
 
 <template>
   <div
-    :class="[
-      'px-3 py-1.5 text-xs font-medium text-text-tertiary',
-      {
-        'pl-9': inset,
-      },
-    ]"
+    :id="group ? `${group.id}-label` : undefined"
+    class="px-3 py-1.5 text-xs font-medium text-text-tertiary"
   >
     <slot />
   </div>

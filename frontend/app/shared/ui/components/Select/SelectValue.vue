@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, inject } from 'vue'
+
 import { selectKey } from './context'
 
 interface Props {
@@ -16,13 +17,13 @@ if (!select) {
   throw new Error('SelectValue must be used inside Select')
 }
 
-const value = computed(() => select.value)
+const selectedItem = computed(() => select.getSelectedItem())
 </script>
 
 <template>
-  <span :class="[value ? 'text-text-primary' : 'text-text-tertiary']">
-    <slot>
-      {{ value ?? placeholder }}
+  <span :class="selectedItem ? 'text-text-primary' : 'text-text-tertiary'">
+    <slot :item="selectedItem" :value="select.value.value">
+      {{ selectedItem?.label ?? placeholder }}
     </slot>
   </span>
 </template>

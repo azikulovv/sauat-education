@@ -169,13 +169,21 @@ import {
 
       <SelectContent>
         <SelectGroup>
-          <SelectLabel> Предметы </SelectLabel>
+          <SelectLabel> Точные науки </SelectLabel>
 
           <SelectItem value="math"> Математика </SelectItem>
 
           <SelectItem value="physics"> Физика </SelectItem>
 
+          <SelectItem value="informatics" disabled> Информатика </SelectItem>
+        </SelectGroup>
+
+        <SelectGroup>
+          <SelectLabel> Гуманитарные науки </SelectLabel>
+
           <SelectItem value="history"> История </SelectItem>
+
+          <SelectItem value="literature"> Литература </SelectItem>
         </SelectGroup>
       </SelectContent>
     </Select>
