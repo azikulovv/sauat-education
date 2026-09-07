@@ -1,36 +1,102 @@
 <script setup lang="ts">
-import { inject } from 'vue'
+import { Check } from 'lucide-vue-next'
 import { dropdownKey } from './context'
 
 interface Props {
+  value: string
   disabled?: boolean
   destructive?: boolean
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   disabled: false,
   destructive: false,
 })
+
+const emit = defineEmits<{
+  select: [value: string]
+}>()
 
 const dropdown = inject(dropdownKey)
 
 if (!dropdown) {
   throw new Error('DropdownItem must be used inside Dropdown')
 }
+
+const element = ref<HTMLElement | null>(null)
+const id = useId()
+
+const highlighted = computed(() => dropdown.highlightedValue.value === props.value)
+
+function register() {
+  dropdown!.registerItem({
+    value: props.value,
+    id,
+    disabled: props.disabled,
+    element: element.value,
+  })
+}
+
+onMounted(register)
+
+onBeforeUnmount(() => {
+  dropdown.unregisterItem(props.value)
+})
+
+function select() {
+  if (props.disabled) {
+    return
+  }
+
+  emit('select', props.value)
+  dropdown!.close()
+
+  dropdown!.triggerElement.value?.focus()
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  if (props.disabled) {
+    return
+  }
+
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    select()
+  }
+}
 </script>
 
 <template>
-  <button
-    type="button"
+  <div
+    :id="id"
+    ref="element"
     role="menuitem"
-    :disabled="disabled"
+    :tabindex="disabled ? -1 : 0"
+    :aria-disabled="disabled || undefined"
     :class="[
-      'flex w-full items-center px-3 py-2 text-left text-sm transition-colors',
-      'disabled:pointer-events-none disabled:opacity-50',
-      destructive ? 'text-error hover:bg-error/5' : 'text-text-primary hover:bg-bg-muted',
+      `
+        flex
+        cursor-default
+        select-none
+        items-center
+        gap-2
+        rounded-md
+        px-3
+        py-2
+        text-sm
+        outline-none
+        transition
+      `,
+      disabled ? 'pointer-events-none opacity-40' : 'cursor-pointer',
+      highlighted && !disabled ? 'bg-surface-hover text-text-primary' : 'text-text-secondary',
+      destructive && !disabled ? 'text-error' : '',
     ]"
-    @click="dropdown.close()"
+    @mouseenter="!disabled && dropdown.highlight(props.value)"
+    @click="select"
+    @keydown="handleKeydown"
   >
     <slot />
-  </button>
+
+    <Check v-if="highlighted" class="ml-auto size-4" aria-hidden="true" />
+  </div>
 </template>

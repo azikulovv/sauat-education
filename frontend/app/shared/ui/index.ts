@@ -4,6 +4,7 @@ export * from './components/Dropdown'
 export * from './components/Select'
 export * from './components/Tabs'
 export * from './components/Tooltip'
+export * from './components/Popover'
 
 export { default as BaseButton } from './primitives/BaseButton/BaseButton.vue'
 export { default as BaseIconButton } from './primitives/BaseIconButton/BaseIconButton.vue'

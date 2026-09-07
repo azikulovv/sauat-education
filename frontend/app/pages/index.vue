@@ -49,6 +49,9 @@ import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
 } from '~/shared/ui'
 </script>
 
@@ -144,23 +147,32 @@ import {
 
     <div class="ml-20">
       <Dropdown>
-        <DropdownTrigger>
-          <BaseButton variant="ghost"> Действия </BaseButton>
-        </DropdownTrigger>
-
+        <DropdownTrigger> Настройки </DropdownTrigger>
         <DropdownContent>
-          <DropdownLabel> Управление </DropdownLabel>
-
-          <DropdownItem> Редактировать </DropdownItem>
-
-          <DropdownItem> Архивировать </DropdownItem>
-
+          <DropdownLabel> Аккаунт </DropdownLabel>
+          <DropdownItem value="profile"> Профиль </DropdownItem>
+          <DropdownItem value="settings"> Настройки </DropdownItem>
           <DropdownSeparator />
-
-          <DropdownItem destructive> Удалить </DropdownItem>
+          <DropdownLabel> Система </DropdownLabel>
+          <DropdownItem value="theme"> Тема </DropdownItem>
+          <DropdownItem value="logout" destructive> Выйти </DropdownItem>
         </DropdownContent>
       </Dropdown>
     </div>
+
+    <Popover>
+      <Dropdown>
+        <PopoverTrigger>
+          <DropdownTrigger> Настройки </DropdownTrigger>
+        </PopoverTrigger>
+
+        <PopoverContent>
+          <div class="w-72 rounded-lg border border-border bg-surface p-4 shadow-lg">
+            Контент Popover
+          </div>
+        </PopoverContent>
+      </Dropdown>
+    </Popover>
 
     <Select>
       <SelectTrigger>
