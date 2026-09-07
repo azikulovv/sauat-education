@@ -16,17 +16,19 @@ export interface DropdownContext {
   contentId: string
 
   triggerElement: Ref<HTMLElement | null>
-  setTriggerElement: (element: HTMLElement | null) => void
 
   setOpen: (value: boolean) => void
   toggle: () => void
   close: () => void
-
+  setTriggerElement: (element: HTMLElement | null) => void
   registerItem: (item: DropdownItemData) => void
   unregisterItem: (value: string) => void
-
-  highlight: (value?: string) => void
+  highlight: (value?: string, focus?: boolean) => void
   moveHighlight: (direction: 1 | -1) => void
+  highlightFirst: () => void
+  highlightLast: () => void
+  getEnabledItems: () => DropdownItemData[]
+  select: (value: string) => void
 }
 
 export const dropdownKey: InjectionKey<DropdownContext> = Symbol('dropdown')

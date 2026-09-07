@@ -147,31 +147,32 @@ import {
 
     <div class="ml-20">
       <Dropdown>
-        <DropdownTrigger> Настройки </DropdownTrigger>
+        <DropdownTrigger> Действия </DropdownTrigger>
+
         <DropdownContent>
-          <DropdownLabel> Аккаунт </DropdownLabel>
-          <DropdownItem value="profile"> Профиль </DropdownItem>
-          <DropdownItem value="settings"> Настройки </DropdownItem>
+          <DropdownLabel> Управление </DropdownLabel>
+
+          <DropdownItem value="edit"> Редактировать </DropdownItem>
+
+          <DropdownItem value="duplicate"> Дублировать </DropdownItem>
+
           <DropdownSeparator />
-          <DropdownLabel> Система </DropdownLabel>
-          <DropdownItem value="theme"> Тема </DropdownItem>
-          <DropdownItem value="logout" destructive> Выйти </DropdownItem>
+
+          <DropdownLabel> Опасная зона </DropdownLabel>
+
+          <DropdownItem value="delete" destructive> Удалить </DropdownItem>
         </DropdownContent>
       </Dropdown>
     </div>
 
     <Popover>
-      <Dropdown>
-        <PopoverTrigger>
-          <DropdownTrigger> Настройки </DropdownTrigger>
-        </PopoverTrigger>
+      <PopoverTrigger> Поповер</PopoverTrigger>
 
-        <PopoverContent>
-          <div class="w-72 rounded-lg border border-border bg-surface p-4 shadow-lg">
-            Контент Popover
-          </div>
-        </PopoverContent>
-      </Dropdown>
+      <PopoverContent>
+        <div class="w-72 rounded-lg border border-border bg-surface p-4 shadow-lg">
+          Контент Popover
+        </div>
+      </PopoverContent>
     </Popover>
 
     <Select>

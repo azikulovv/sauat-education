@@ -6,11 +6,13 @@ interface Props {
   value: string
   disabled?: boolean
   destructive?: boolean
+  inset?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   disabled: false,
   destructive: false,
+  inset: false,
 })
 
 const emit = defineEmits<{
@@ -23,13 +25,14 @@ if (!dropdown) {
   throw new Error('DropdownItem must be used inside Dropdown')
 }
 
-const element = ref<HTMLElement | null>(null)
+const element = ref<HTMLDivElement | null>(null)
+
 const id = useId()
 
 const highlighted = computed(() => dropdown.highlightedValue.value === props.value)
 
 function register() {
-  dropdown!.registerItem({
+  dropdown?.registerItem({
     value: props.value,
     id,
     disabled: props.disabled,
@@ -37,33 +40,33 @@ function register() {
   })
 }
 
-onMounted(register)
-
-onBeforeUnmount(() => {
-  dropdown.unregisterItem(props.value)
-})
-
 function select() {
   if (props.disabled) {
     return
   }
 
   emit('select', props.value)
-  dropdown!.close()
 
-  dropdown!.triggerElement.value?.focus()
+  dropdown?.select(props.value)
 }
 
-function handleKeydown(event: KeyboardEvent) {
+function handleClick() {
+  select()
+}
+
+function handleMouseEnter() {
   if (props.disabled) {
     return
   }
 
-  if (event.key === 'Enter' || event.key === ' ') {
-    event.preventDefault()
-    select()
-  }
+  dropdown?.highlight(props.value, false)
 }
+
+onMounted(register)
+
+onBeforeUnmount(() => {
+  dropdown.unregisterItem(props.value)
+})
 </script>
 
 <template>
@@ -71,12 +74,12 @@ function handleKeydown(event: KeyboardEvent) {
     :id="id"
     ref="element"
     role="menuitem"
-    :tabindex="disabled ? -1 : 0"
-    :aria-disabled="disabled || undefined"
+    :tabindex="disabled ? -1 : highlighted ? 0 : -1"
+    :aria-disabled="disabled ? 'true' : undefined"
     :class="[
       `
         flex
-        cursor-default
+        min-h-9
         select-none
         items-center
         gap-2
@@ -85,18 +88,37 @@ function handleKeydown(event: KeyboardEvent) {
         py-2
         text-sm
         outline-none
-        transition
+        transition-colors
       `,
-      disabled ? 'pointer-events-none opacity-40' : 'cursor-pointer',
-      highlighted && !disabled ? 'bg-surface-hover text-text-primary' : 'text-text-secondary',
+
+      inset ? 'pl-9' : '',
+
+      disabled
+        ? `
+          pointer-events-none
+          cursor-not-allowed
+          opacity-40
+        `
+        : `
+          cursor-pointer
+        `,
+
+      highlighted && !disabled
+        ? `
+          bg-surface-hover
+          text-text-primary
+        `
+        : `
+          text-text-secondary
+        `,
+
       destructive && !disabled ? 'text-error' : '',
     ]"
-    @mouseenter="!disabled && dropdown.highlight(props.value)"
-    @click="select"
-    @keydown="handleKeydown"
+    @mouseenter="handleMouseEnter"
+    @click="handleClick"
   >
     <slot />
 
-    <Check v-if="highlighted" class="ml-auto size-4" aria-hidden="true" />
+    <Check v-if="highlighted" class="ml-auto size-4 shrink-0" aria-hidden="true" />
   </div>
 </template>
