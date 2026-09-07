@@ -1,16 +1,14 @@
 import type { Quiz } from '~/entities/quiz'
-import { lessonQuiz } from '~/entities/quiz'
+import { quizzes } from '~/entities/quiz'
 
 export async function getQuiz(quizId: string): Promise<Quiz | undefined> {
   await new Promise((resolve) => setTimeout(resolve, 250))
 
-  return quizId === lessonQuiz.id ? lessonQuiz : undefined
+  return quizzes.find((quiz) => quiz.id === quizId)
 }
 
 export async function getQuizForLesson(lessonId: string): Promise<Quiz | undefined> {
-  if (lessonId !== lessonQuiz.lessonId) {
-    return undefined
-  }
+  await new Promise((resolve) => setTimeout(resolve, 150))
 
-  return getQuiz(lessonQuiz.id)
+  return quizzes.find((quiz) => quiz.lessonId === lessonId)
 }

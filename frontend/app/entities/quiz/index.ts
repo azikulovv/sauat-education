@@ -1,5 +1,5 @@
 export type * from './model/types'
-export { lessonQuiz } from './model/mock'
+export { lessonQuiz, quizzes } from './model/mock'
 export { default as QuizProgress } from './ui/QuizProgress.vue'
 export { default as QuizQuestion } from './ui/QuizQuestion.vue'
 export { default as QuizOption } from './ui/QuizOption.vue'
