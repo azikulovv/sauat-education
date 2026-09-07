@@ -51,7 +51,6 @@ import {
   PopoverContent,
   SelectGroup,
   SelectLabel,
-  SelectValue,
 } from '~/shared/ui'
 </script>
 
@@ -176,9 +175,7 @@ import {
     </Popover>
 
     <Select>
-      <SelectTrigger>
-        <SelectValue placeholder="Выберите предмет" />
-      </SelectTrigger>
+      <SelectTrigger placeholder="Выберите предмет" />
 
       <SelectContent>
         <SelectGroup>

@@ -35,7 +35,9 @@ const selectedLabel = computed(() => {
   return select.getSelectedItem()?.label ?? props.placeholder
 })
 
-const hasValue = computed(() => Boolean(select.value.value))
+const hasValue = computed(() => {
+  return select.value.value !== undefined
+})
 
 onMounted(() => {
   select.setTriggerElement(element.value)

@@ -329,7 +329,7 @@ onBeforeUnmount(() => {
       "
     >
       <div
-        v-if="select.open.value"
+        v-show="select.open.value"
         :id="select.contentId"
         ref="element"
         class="z-50 max-h-[min(24rem,calc(100vh-1rem))] overflow-y-auto overscroll-contain rounded-lg border border-border bg-surface p-1 text-text-primary shadow-lg outline-none"
