@@ -4,13 +4,13 @@ WORKDIR /app
 # Deps
 FROM base AS deps
 COPY package*.json ./
-RUN corepack enable && npm install --frozen-lockfile
+RUN npm install --frozen-lockfile
 
 # Build
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN corepack enable && npm run build
+RUN npm run build
 
 # Production
 FROM node:24-slim AS production
