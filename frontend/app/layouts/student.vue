@@ -15,7 +15,9 @@ import { BaseIconButton } from '~/shared/ui'
           <span class="flex size-8 items-center justify-center rounded-md bg-primary text-white">
             <BookOpen class="size-4" aria-hidden="true" />
           </span>
-          <span class="text-sm font-bold tracking-tight text-text-primary">Sауат</span>
+          <span class="text-sm font-bold tracking-tight text-text-primary w-16">
+            Sauat Education
+          </span>
         </div>
 
         <nav class="hidden items-center gap-1 md:flex" aria-label="Основная навигация">

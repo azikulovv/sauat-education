@@ -9,6 +9,8 @@ export const currentLesson: Lesson = {
   completed: false,
   required: true,
   progress: 64,
+  notes:
+    'Квадратное уравнение имеет вид ax² + bx + c = 0. Для поиска корней сначала вычисляем дискриминант, а затем выбираем подходящую формулу.',
   timecodes: [
     { id: 'intro', label: 'Введение', time: '00:00' },
     { id: 'formula', label: 'Формула дискриминанта', time: '06:42' },

@@ -1,6 +1,5 @@
 <template>
-  <div>
-    <h1 class="text-2xl">Default</h1>
+  <div class="min-h-screen bg-bg text-text-primary">
     <slot />
   </div>
 </template>
