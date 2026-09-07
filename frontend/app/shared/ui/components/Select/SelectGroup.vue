@@ -5,12 +5,11 @@ interface Props {
 
 const props = defineProps<Props>()
 const id = useId()
+const labelledBy = computed(() => (props.label ? `${id}-label` : undefined))
 
 provide('select-group', {
   id,
 })
-
-const labelledBy = computed(() => (props.label ? `${id}-label` : undefined))
 </script>
 
 <template>

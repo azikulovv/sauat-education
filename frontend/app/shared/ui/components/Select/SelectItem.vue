@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
-
 import { Check } from 'lucide-vue-next'
-
 import { selectKey } from './context'
 
 interface Props {
@@ -12,6 +9,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  label: undefined,
   disabled: false,
 })
 
@@ -21,20 +19,30 @@ if (!select) {
   throw new Error('SelectItem must be used inside Select')
 }
 
-const element = ref<HTMLElement | null>(null)
-
+const element = ref<HTMLDivElement | null>(null)
 const id = useId()
-
 const selected = computed(() => select.value.value === props.value)
-
 const highlighted = computed(() => select.highlightedValue.value === props.value)
+const resolvedLabel = computed(
+  () => props.label ?? element.value?.textContent?.trim() ?? props.value,
+)
 
-function handleClick() {
+function register() {
+  select!.registerItem({
+    value: props.value,
+    label: resolvedLabel.value,
+    disabled: props.disabled,
+    id,
+    element: element.value,
+  })
+}
+
+function selectItem() {
   if (props.disabled) {
     return
   }
 
-  select!.setValue(props.value)
+  select!.select(props.value)
 }
 
 function handleMouseEnter() {
@@ -42,17 +50,11 @@ function handleMouseEnter() {
     return
   }
 
-  select!.highlight(props.value)
+  select!.highlight(props.value, false)
 }
 
 onMounted(() => {
-  select.registerItem({
-    value: props.value,
-    label: props.label ?? element.value?.textContent?.trim() ?? props.value,
-    disabled: props.disabled,
-    id,
-    element: element.value,
-  })
+  register()
 })
 
 onBeforeUnmount(() => {
@@ -61,33 +63,54 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <button
+  <div
     :id="id"
     ref="element"
-    type="button"
     role="option"
     :aria-selected="selected"
-    :aria-disabled="disabled"
-    :data-state="selected ? 'checked' : 'unchecked'"
-    :data-highlighted="highlighted ? '' : undefined"
-    :disabled="disabled"
+    :aria-disabled="disabled ? 'true' : undefined"
+    :tabindex="highlighted ? 0 : -1"
     :class="[
-      'flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors',
-      'disabled:pointer-events-none disabled:opacity-40',
+      `
+        flex
+        min-h-9
+        select-none
+        items-center
+        gap-2
+        rounded-md
+        px-3
+        py-2
+        text-sm
+        outline-none
+        transition-colors
+      `,
 
-      highlighted && !selected ? 'bg-bg-muted text-text-primary' : '',
+      disabled
+        ? `
+          pointer-events-none
+          cursor-not-allowed
+          opacity-40
+        `
+        : `
+          cursor-pointer
+        `,
 
-      selected ? 'bg-primary/10 text-primary' : 'text-text-primary',
-
-      !highlighted && !selected ? 'hover:bg-bg-muted' : '',
+      highlighted && !disabled
+        ? `
+          bg-surface-hover
+          text-text-primary
+        `
+        : `
+          text-text-secondary
+        `,
     ]"
-    @click="handleClick"
     @mouseenter="handleMouseEnter"
+    @click="selectItem"
   >
-    <span class="min-w-0 truncate">
+    <span class="min-w-0 flex-1">
       <slot />
     </span>
 
-    <Check v-if="selected" class="ml-2 size-4 shrink-0" aria-hidden="true" />
-  </button>
+    <Check v-if="selected" class="size-4 shrink-0 text-primary" aria-hidden="true" />
+  </div>
 </template>

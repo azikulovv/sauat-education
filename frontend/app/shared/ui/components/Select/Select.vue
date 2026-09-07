@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import { computed, nextTick, provide, ref, watch } from 'vue'
-
-import { selectKey, type SelectItemData } from './context'
+import { selectKey, type SelectContext, type SelectItemData } from './context'
 
 interface Props {
   modelValue?: string
   defaultValue?: string
   disabled?: boolean
-  id?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -17,167 +14,223 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string]
-  change: [value: string]
+  'update:modelValue': [value: string | undefined]
+  change: [value: string | undefined]
+  open: []
+  close: []
 }>()
 
-const value = ref<string | undefined>(props.modelValue ?? props.defaultValue)
+const internalValue = ref<string | undefined>(props.defaultValue)
+
+const value = computed({
+  get() {
+    return props.modelValue ?? internalValue.value
+  },
+
+  set(newValue) {
+    internalValue.value = newValue
+
+    emit('update:modelValue', newValue)
+
+    emit('change', newValue)
+  },
+})
 
 const open = ref(false)
-
-const highlightedValue = ref<string | undefined>()
-
+const highlightedValue = ref<string>()
 const items = ref<SelectItemData[]>([])
-
 const disabled = computed(() => props.disabled)
+const triggerElement = ref<HTMLElement | null>(null)
+const triggerId = useId()
+const contentId = useId()
 
-const triggerId = props.id ?? useId()
-
-const contentId = `${triggerId}-content`
-
-watch(
-  () => props.modelValue,
-  (newValue) => {
-    if (newValue !== undefined) {
-      value.value = newValue
-    }
-  },
-)
-
-const enabledItems = computed(() => items.value.filter((item) => !item.disabled))
-
-function setValue(newValue: string) {
-  const item = items.value.find((item) => item.value === newValue)
+function setValue(value: string) {
+  const item = items.value.find((item) => item.value === value)
 
   if (!item || item.disabled) {
     return
   }
 
-  value.value = newValue
+  internalValue.value = value
 
-  emit('update:modelValue', newValue)
+  emit('update:modelValue', value)
+  emit('change', value)
 
-  emit('change', newValue)
-
-  open.value = false
-
-  nextTick(() => {
-    document.getElementById(triggerId)?.focus()
-  })
+  close()
 }
 
 function setOpen(newValue: boolean) {
-  if (disabled.value) {
+  if (disabled.value && newValue) {
+    return
+  }
+
+  if (open.value === newValue) {
     return
   }
 
   open.value = newValue
 
   if (newValue) {
-    nextTick(() => {
-      highlightedValue.value = value.value ?? enabledItems.value[0]?.value
-    })
+    emit('open')
+  } else {
+    emit('close')
   }
 }
 
 function toggle() {
+  if (disabled.value) {
+    return
+  }
+
   setOpen(!open.value)
 }
 
-function registerItem(item: SelectItemData) {
-  const existingIndex = items.value.findIndex((current) => current.value === item.value)
+function close() {
+  setOpen(false)
 
-  if (existingIndex === -1) {
+  highlightedValue.value = undefined
+}
+
+function setTriggerElement(element: HTMLElement | null) {
+  triggerElement.value = element
+}
+
+function registerItem(item: SelectItemData) {
+  const index = items.value.findIndex((current) => current.value === item.value)
+
+  if (index === -1) {
     items.value.push(item)
   } else {
-    items.value[existingIndex] = item
+    items.value[index] = item
+  }
+
+  if (value.value && item.value === value.value) {
+    highlightedValue.value = item.value
   }
 }
 
 function unregisterItem(itemValue: string) {
   items.value = items.value.filter((item) => item.value !== itemValue)
-}
 
-function highlight(itemValue?: string) {
-  if (!itemValue) {
+  if (highlightedValue.value === itemValue) {
     highlightedValue.value = undefined
-
-    return
   }
-
-  const item = items.value.find((current) => current.value === itemValue)
-
-  if (!item || item.disabled) {
-    return
-  }
-
-  highlightedValue.value = itemValue
 }
 
-function moveHighlight(direction: 1 | -1) {
-  if (!enabledItems.value.length) {
-    return
-  }
+function getEnabledItems() {
+  return items.value.filter((item) => !item.disabled)
+}
 
-  const currentIndex = enabledItems.value.findIndex((item) => item.value === highlightedValue.value)
-
-  let nextIndex
-
-  if (currentIndex === -1) {
-    nextIndex = direction === 1 ? 0 : enabledItems.value.length - 1
-  } else {
-    nextIndex = currentIndex + direction
-
-    if (nextIndex >= enabledItems.value.length) {
-      nextIndex = 0
-    }
-
-    if (nextIndex < 0) {
-      nextIndex = enabledItems.value.length - 1
-    }
-  }
-
-  highlightedValue.value = enabledItems.value[nextIndex]?.value
-
-  nextTick(() => {
-    const item = enabledItems.value[nextIndex]
-
-    item?.element?.scrollIntoView({
-      block: 'nearest',
-    })
-  })
+function getItemByValue(itemValue: string) {
+  return items.value.find((item) => item.value === itemValue)
 }
 
 function getSelectedItem() {
-  return items.value.find((item) => item.value === value.value)
+  if (!value.value) {
+    return undefined
+  }
+
+  return getItemByValue(value.value)
 }
 
-provide(selectKey, {
+function highlight(itemValue?: string, focus = true) {
+  highlightedValue.value = itemValue
+
+  if (!itemValue || !focus) {
+    return
+  }
+
+  const item = getItemByValue(itemValue)
+
+  item?.element?.scrollIntoView({
+    block: 'nearest',
+  })
+}
+
+function highlightFirst() {
+  const first = getEnabledItems()[0]
+
+  highlight(first?.value)
+}
+
+function highlightLast() {
+  const enabled = getEnabledItems()
+
+  highlight(enabled[enabled.length - 1]?.value)
+}
+
+function moveHighlight(direction: 1 | -1) {
+  const enabled = getEnabledItems()
+
+  if (!enabled.length) {
+    return
+  }
+
+  const currentIndex = enabled.findIndex((item) => item.value === highlightedValue.value)
+
+  if (currentIndex === -1) {
+    const selectedIndex = enabled.findIndex((item) => item.value === value.value)
+
+    if (selectedIndex !== -1) {
+      highlight(enabled[selectedIndex]?.value)
+
+      return
+    }
+
+    if (direction === 1) {
+      highlightFirst()
+    } else {
+      highlightLast()
+    }
+
+    return
+  }
+
+  const nextIndex = (currentIndex + direction + enabled.length) % enabled.length
+
+  highlight(enabled[nextIndex]?.value)
+}
+
+watch(
+  () => value.value,
+  (newValue) => {
+    if (newValue) {
+      highlightedValue.value = newValue
+    }
+  },
+)
+
+const context: SelectContext = {
   value,
   open,
   highlightedValue,
   disabled,
   items,
-
   triggerId,
   contentId,
-
+  triggerElement,
   setValue,
   setOpen,
   toggle,
-
+  close,
+  setTriggerElement,
   registerItem,
   unregisterItem,
-
   highlight,
+  highlightFirst,
+  highlightLast,
   moveHighlight,
-
+  getEnabledItems,
   getSelectedItem,
-})
+  select: setValue,
+  getItemByValue,
+}
+
+provide(selectKey, context)
 </script>
 
 <template>
-  <div class="relative w-full">
+  <div class="relative inline-block">
     <slot />
   </div>
 </template>

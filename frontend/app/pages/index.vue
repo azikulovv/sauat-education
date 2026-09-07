@@ -37,10 +37,7 @@ import {
   DropdownSeparator,
   SelectTrigger,
   Select,
-  SelectValue,
   SelectContent,
-  SelectGroup,
-  SelectLabel,
   SelectItem,
   Tabs,
   TabsList,
@@ -52,6 +49,9 @@ import {
   Popover,
   PopoverTrigger,
   PopoverContent,
+  SelectGroup,
+  SelectLabel,
+  SelectValue,
 } from '~/shared/ui'
 </script>
 
@@ -182,21 +182,19 @@ import {
 
       <SelectContent>
         <SelectGroup>
+          <SelectLabel> Гуманитарные </SelectLabel>
+
+          <SelectItem value="history"> История </SelectItem>
+
+          <SelectItem value="literature"> Литература </SelectItem>
+        </SelectGroup>
+
+        <SelectGroup>
           <SelectLabel> Точные науки </SelectLabel>
 
           <SelectItem value="math"> Математика </SelectItem>
 
           <SelectItem value="physics"> Физика </SelectItem>
-
-          <SelectItem value="informatics" disabled> Информатика </SelectItem>
-        </SelectGroup>
-
-        <SelectGroup>
-          <SelectLabel> Гуманитарные науки </SelectLabel>
-
-          <SelectItem value="history"> История </SelectItem>
-
-          <SelectItem value="literature"> Литература </SelectItem>
         </SelectGroup>
       </SelectContent>
     </Select>

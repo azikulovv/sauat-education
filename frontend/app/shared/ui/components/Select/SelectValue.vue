@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { computed, inject } from 'vue'
-
 import { selectKey } from './context'
 
 interface Props {
   placeholder?: string
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   placeholder: 'Выберите значение',
 })
 
@@ -17,13 +15,19 @@ if (!select) {
   throw new Error('SelectValue must be used inside Select')
 }
 
-const selectedItem = computed(() => select.getSelectedItem())
+const label = computed(() => {
+  const selected = select.getSelectedItem()
+
+  return selected?.label ?? props.placeholder
+})
+
+const hasValue = computed(() => {
+  return select.value.value !== undefined
+})
 </script>
 
 <template>
-  <span :class="selectedItem ? 'text-text-primary' : 'text-text-tertiary'">
-    <slot :item="selectedItem" :value="select.value.value">
-      {{ selectedItem?.label ?? placeholder }}
-    </slot>
+  <span :class="hasValue ? 'text-text-primary' : 'text-text-tertiary'">
+    {{ label }}
   </span>
 </template>

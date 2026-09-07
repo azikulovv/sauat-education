@@ -3,7 +3,7 @@ import { inject } from 'vue'
 
 const group = inject<{
   id: string
-}>('select-group')
+} | null>('select-group', null)
 </script>
 
 <template>
