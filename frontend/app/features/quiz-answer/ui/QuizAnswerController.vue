@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ArrowRight, Check, Send } from 'lucide-vue-next'
 import { computed } from 'vue'
-import { BaseButton } from '~/shared/ui'
+import { BaseAlert, BaseButton } from '~/shared/ui'
 import { QuizProgress, QuizQuestion } from '~/entities/quiz'
 import type { Quiz } from '~/entities/quiz'
 import { useQuizAnswer, type QuizAnswerResult } from '../model/useQuizAnswer'
@@ -22,8 +22,8 @@ const isAnswerChecked = computed(
   () => answer.answerState.value === 'correct' || answer.answerState.value === 'incorrect',
 )
 
-const handleNext = () => {
-  answer.nextQuestion()
+const handleNext = async () => {
+  await answer.nextQuestion()
 
   if (answer.answerState.value === 'completed') {
     emit('completed', answer.result.value)
@@ -33,6 +33,10 @@ const handleNext = () => {
 
 <template>
   <div v-if="answer.currentQuestion.value" class="space-y-6">
+    <BaseAlert v-if="answer.error.value" variant="error" title="Не удалось сохранить ответ">
+      {{ answer.error.value }}
+    </BaseAlert>
+
     <QuizProgress :current="currentNumber" :total="quiz.questions.length" />
 
     <QuizQuestion
@@ -66,6 +70,7 @@ const handleNext = () => {
       <BaseButton
         v-else
         :disabled="!answer.selectedAnswer.value"
+        :loading="answer.checking.value"
         :leading-icon="Send"
         @click="answer.submitAnswer"
       >

@@ -1,10 +1,7 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
-import { BaseAlert, BaseContainer } from '~/shared/ui'
-import { currentStudent } from '~/entities/student'
-import { subjects } from '~/entities/subject'
-import { currentLesson } from '~/entities/lesson'
-import { overallProgress } from '~/entities/progress'
+import { BaseAlert, BaseContainer, BaseSkeleton } from '~/shared/ui'
+import { getDashboard } from '~/shared/api/dashboard'
 import {
   DashboardContinueLearning,
   DashboardOverview,
@@ -23,11 +20,12 @@ useHead({
   meta: [{ name: 'description', content: 'Ваш прогресс и текущие учебные материалы.' }],
 })
 
+const { data: dashboard, pending, error } = await useAsyncData('dashboard', getDashboard)
 const selectedSubjectId = ref<string | null>(null)
 const isLessonSelected = ref(false)
 
 const selectedSubject = computed(() =>
-  subjects.find((subject) => subject.id === selectedSubjectId.value),
+  dashboard.value?.subjects.find((subject) => subject.id === selectedSubjectId.value),
 )
 
 const openSubject = (subject: Subject) => {
@@ -36,8 +34,9 @@ const openSubject = (subject: Subject) => {
 }
 
 const continueLearning = () => {
+  if (!dashboard.value?.currentLesson) return
   isLessonSelected.value = true
-  void navigateTo(`/subjects/${currentLesson.subjectId}/lessons/${currentLesson.id}`)
+  void navigateTo(`/subjects/${dashboard.value.currentLesson.subjectId}/lessons/${dashboard.value.currentLesson.id}`)
 }
 
 const handleAlertClose = () => {
@@ -50,18 +49,23 @@ const handleAlertClose = () => {
   <AppShell active="dashboard">
     <BaseContainer>
       <div class="py-8 pb-20 sm:py-10 lg:py-12">
+        <BaseAlert v-if="error" variant="error" title="Не удалось загрузить кабинет">
+          {{ error.message }}
+        </BaseAlert>
+        <BaseSkeleton v-else-if="pending" variant="rect" width="100%" height="420px" />
         <DashboardOverview
-          :student="currentStudent"
-          :progress="overallProgress"
-          :current-lesson="currentLesson"
+          v-else-if="dashboard?.currentLesson"
+          :student="dashboard.student"
+          :progress="dashboard.progress"
+          :current-lesson="dashboard.currentLesson"
         />
 
-        <div class="mt-12">
-          <DashboardSubjects :subjects="subjects" @subject-click="openSubject" />
+        <div v-if="dashboard" class="mt-12">
+          <DashboardSubjects :subjects="dashboard.subjects" @subject-click="openSubject" />
         </div>
 
-        <div class="mt-12">
-          <DashboardContinueLearning :lesson="currentLesson" @continue="continueLearning" />
+        <div v-if="dashboard?.currentLesson" class="mt-12">
+          <DashboardContinueLearning :lesson="dashboard.currentLesson" @continue="continueLearning" />
         </div>
 
         <BaseAlert

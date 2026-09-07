@@ -1,14 +1,10 @@
 import type { Subject } from '~/entities/subject'
-import { subjects } from '~/entities/subject'
+import { apiFetch } from './client'
 
-export async function getSubjects(): Promise<Subject[]> {
-  await new Promise((resolve) => setTimeout(resolve, 250))
-
-  return subjects
+export function getSubjects(): Promise<Subject[]> {
+  return apiFetch<Subject[]>('/subjects')
 }
 
-export async function getSubject(subjectId: string): Promise<Subject | undefined> {
-  const result = await getSubjects()
-
-  return result.find((subject) => subject.id === subjectId)
+export function getSubject(subjectId: string): Promise<Subject> {
+  return apiFetch<Subject>(`/subjects/${subjectId}`)
 }

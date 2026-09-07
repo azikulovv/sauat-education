@@ -1,5 +1,5 @@
 import type { Student } from '~/entities/student'
-import { currentStudent } from '~/entities/student'
+import { apiFetch } from './client'
 
 export interface LoginCredentials {
   email: string
@@ -11,22 +11,6 @@ export interface LoginResponse {
   accessToken: string
 }
 
-export async function loginStudent(credentials: LoginCredentials): Promise<LoginResponse> {
-  await new Promise((resolve) => setTimeout(resolve, 450))
-
-  if (!credentials.email || !credentials.password) {
-    throw new Error('Введите email и пароль.')
-  }
-
-  if (credentials.password.length < 6) {
-    throw new Error('Пароль должен содержать минимум 6 символов.')
-  }
-
-  return {
-    user: {
-      ...currentStudent,
-      email: credentials.email,
-    },
-    accessToken: `mock-token-${currentStudent.id}`,
-  }
+export function loginStudent(credentials: LoginCredentials): Promise<LoginResponse> {
+  return apiFetch<LoginResponse>('/auth/login', { method: 'POST', body: credentials })
 }

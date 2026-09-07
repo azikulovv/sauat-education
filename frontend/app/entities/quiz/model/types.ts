@@ -7,7 +7,7 @@ export interface QuizQuestion {
   id: string
   question: string
   options: QuizOption[]
-  correctAnswer: string
+  correctAnswer?: string
   explanation?: string
 }
 

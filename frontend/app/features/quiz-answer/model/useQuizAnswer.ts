@@ -1,5 +1,6 @@
 import { computed, ref, toValue, type MaybeRefOrGetter } from 'vue'
 import type { Quiz } from '~/entities/quiz'
+import { checkQuizAnswer, submitQuizAttempt } from '~/shared/api/quizzes'
 
 export type QuizAnswerState = 'idle' | 'answered' | 'correct' | 'incorrect' | 'completed'
 
@@ -23,8 +24,16 @@ export function useQuizAnswer(quiz: MaybeRefOrGetter<Quiz>) {
   const answerState = ref<QuizAnswerState>('idle')
   const correctAnswers = ref(0)
   const mistakes = ref<QuizMistake[]>([])
+  const checkedAnswers = ref<Record<string, string>>({})
+  const answerMap = ref<Record<string, string>>({})
+  const checking = ref(false)
+  const error = ref<string | null>(null)
 
-  const currentQuestion = computed(() => toValue(quiz).questions[questionIndex.value])
+  const currentQuestion = computed(() => {
+    const question = toValue(quiz).questions[questionIndex.value]
+    if (!question) return undefined
+    return { ...question, correctAnswer: checkedAnswers.value[question.id] ?? question.correctAnswer }
+  })
   const isLastQuestion = computed(
     () => questionIndex.value === Math.max(0, toValue(quiz).questions.length - 1),
   )
@@ -38,32 +47,48 @@ export function useQuizAnswer(quiz: MaybeRefOrGetter<Quiz>) {
     answerState.value = 'answered'
   }
 
-  const submitAnswer = () => {
+  const submitAnswer = async () => {
     const question = currentQuestion.value
 
-    if (!question || !selectedAnswer.value || answerState.value !== 'answered') {
+    if (!question || !selectedAnswer.value || answerState.value !== 'answered' || checking.value) {
       return
     }
 
-    if (selectedAnswer.value === question.correctAnswer) {
-      correctAnswers.value += 1
-      answerState.value = 'correct'
-    } else {
-      mistakes.value.push({
-        questionId: question.id,
-        selectedAnswer: selectedAnswer.value,
-        correctAnswer: question.correctAnswer,
-      })
-      answerState.value = 'incorrect'
+    checking.value = true
+    error.value = null
+    try {
+      const selected = selectedAnswer.value
+      const response = await checkQuizAnswer(toValue(quiz).id, question.id, selected)
+      checkedAnswers.value[question.id] = response.correctAnswer
+      answerMap.value[question.id] = selected
+      if (response.isCorrect) {
+        correctAnswers.value += 1
+        answerState.value = 'correct'
+      } else {
+        mistakes.value.push({ questionId: question.id, selectedAnswer: selected, correctAnswer: response.correctAnswer })
+        answerState.value = 'incorrect'
+      }
+    } catch (cause) {
+      error.value = cause instanceof Error ? cause.message : 'Не удалось проверить ответ.'
+    } finally {
+      checking.value = false
     }
   }
 
-  const nextQuestion = () => {
+  const nextQuestion = async () => {
     if (answerState.value !== 'correct' && answerState.value !== 'incorrect') {
       return
     }
 
     if (isLastQuestion.value) {
+      try {
+        const response = await submitQuizAttempt(toValue(quiz).id, answerMap.value)
+        correctAnswers.value = response.score
+        mistakes.value = response.mistakes
+      } catch (cause) {
+        error.value = cause instanceof Error ? cause.message : 'Не удалось сохранить результат теста.'
+        return
+      }
       answerState.value = 'completed'
       return
     }
@@ -103,6 +128,9 @@ export function useQuizAnswer(quiz: MaybeRefOrGetter<Quiz>) {
     answerState.value = 'idle'
     correctAnswers.value = 0
     mistakes.value = []
+    checkedAnswers.value = {}
+    answerMap.value = {}
+    error.value = null
   }
 
   return {
@@ -117,5 +145,7 @@ export function useQuizAnswer(quiz: MaybeRefOrGetter<Quiz>) {
     submitAnswer,
     nextQuestion,
     reset,
+    checking,
+    error,
   }
 }

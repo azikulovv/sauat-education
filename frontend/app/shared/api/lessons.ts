@@ -1,32 +1,15 @@
 import type { Lesson } from '~/entities/lesson'
-import { lessons } from '~/entities/lesson'
+import { apiFetch } from './client'
 
-export async function getLessons(subjectId?: string): Promise<Lesson[]> {
-  await new Promise((resolve) => setTimeout(resolve, 250))
-
-  if (!subjectId) {
-    return lessons
-  }
-
-  return lessons.filter((lesson) => lesson.subjectId === subjectId)
+export function getLessons(subjectId?: string): Promise<Lesson[]> {
+  const query = subjectId ? `?subjectId=${encodeURIComponent(subjectId)}` : ''
+  return apiFetch<Lesson[]>(`/lessons${query}`)
 }
 
-export async function getLesson(lessonId: string): Promise<Lesson | undefined> {
-  const result = await getLessons()
-
-  return result.find((lesson) => lesson.id === lessonId)
+export function getLesson(lessonId: string): Promise<Lesson> {
+  return apiFetch<Lesson>(`/lessons/${lessonId}`)
 }
 
-export async function completeLesson(lessonId: string): Promise<Lesson> {
-  const lesson = await getLesson(lessonId)
-
-  if (!lesson) {
-    throw new Error('Урок не найден.')
-  }
-
-  return {
-    ...lesson,
-    completed: true,
-    progress: 100,
-  }
+export function completeLesson(lessonId: string): Promise<Lesson> {
+  return apiFetch<Lesson>(`/lessons/${lessonId}/complete`, { method: 'POST' })
 }

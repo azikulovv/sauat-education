@@ -51,7 +51,7 @@ const handleLogin = () => navigateTo('/')
             </BaseCard>
 
             <p class="mt-5 text-center text-xs text-text-tertiary">
-              Демо-режим: используйте любой email и пароль от 6 символов.
+              Демо-доступ: aliya.sadykova@example.com / Demo1234!
             </p>
           </div>
         </div>
