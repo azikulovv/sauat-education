@@ -1,4 +1,4 @@
-import Fastify, { type FastifyRequest } from 'fastify'
+import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify'
 import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
 import jwt from '@fastify/jwt'
@@ -23,6 +23,28 @@ const loginSchema = z.object({
 const idSchema = z.object({ id: z.string().min(1).max(120) })
 const checkSchema = z.object({ questionId: z.string().min(1).max(120), answerId: z.string().min(1).max(30) })
 const attemptSchema = z.object({ answers: z.record(z.string(), z.string().max(30)).refine((answers) => Object.keys(answers).length > 0) })
+const slugSchema = z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(120)
+const adminSubjectSchema = z.object({
+  id: slugSchema,
+  title: z.string().trim().min(2).max(120),
+  description: z.string().trim().min(2).max(500),
+  icon: z.string().trim().max(40).optional().nullable(),
+  sortOrder: z.coerce.number().int().min(0).max(9999).default(0),
+})
+const adminSubjectUpdateSchema = adminSubjectSchema.omit({ id: true }).partial()
+const adminLessonSchema = z.object({
+  id: slugSchema,
+  subjectId: slugSchema,
+  title: z.string().trim().min(2).max(160),
+  description: z.string().trim().min(2).max(700),
+  duration: z.coerce.number().int().positive().max(600),
+  required: z.boolean().default(false),
+  notes: z.string().trim().max(3000).optional().nullable(),
+  videoUrl: z.string().trim().url().max(500).optional().nullable(),
+  timecodes: z.array(z.object({ id: slugSchema, label: z.string().trim().min(1).max(120), time: z.string().regex(/^\d{2}:\d{2}$/) })).default([]),
+  sortOrder: z.coerce.number().int().min(0).max(9999).default(0),
+})
+const adminLessonUpdateSchema = adminLessonSchema.omit({ id: true }).partial()
 
 const userSelect = `id, email, name, avatar, locale, role`
 
@@ -41,6 +63,12 @@ async function authenticate(request: FastifyRequest) {
     const error = new Error('Требуется авторизация.') as Error & { statusCode: number }
     error.statusCode = 401
     throw error
+  }
+}
+
+async function requireAdmin(request: FastifyRequest, reply: FastifyReply) {
+  if ((request as AuthenticatedRequest).user.role !== 'admin') {
+    return reply.code(403).send({ error: 'FORBIDDEN', message: 'Доступ только для администраторов.' })
   }
 }
 
@@ -87,6 +115,119 @@ app.get('/api/auth/me', { preHandler: app.authenticate }, async (request, reply)
   const { rows } = await pool.query(`SELECT ${userSelect} FROM users WHERE id = $1`, [userId(request)])
   if (!rows[0]) return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Пользователь не найден.' })
   return { user: publicUser(rows[0]) }
+})
+
+app.get('/api/admin/stats', { preHandler: [app.authenticate, requireAdmin] }, async () => {
+  const [users, subjects, lessons, quizzes, attempts, progress] = await Promise.all([
+    pool.query('SELECT COUNT(*)::int AS count FROM users'),
+    pool.query('SELECT COUNT(*)::int AS count FROM subjects'),
+    pool.query('SELECT COUNT(*)::int AS count FROM lessons'),
+    pool.query('SELECT COUNT(*)::int AS count FROM quizzes'),
+    pool.query('SELECT COUNT(*)::int AS count, COUNT(*) FILTER (WHERE passed)::int AS passed FROM quiz_attempts'),
+    pool.query('SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE completed)::int AS completed FROM lesson_progress'),
+  ])
+  return {
+    users: users.rows[0].count,
+    subjects: subjects.rows[0].count,
+    lessons: lessons.rows[0].count,
+    quizzes: quizzes.rows[0].count,
+    attempts: attempts.rows[0].count,
+    passedAttempts: attempts.rows[0].passed,
+    completionRate: progress.rows[0].total ? Math.round((progress.rows[0].completed / progress.rows[0].total) * 100) : 0,
+  }
+})
+
+app.get('/api/admin/users', { preHandler: [app.authenticate, requireAdmin] }, async () => {
+  const { rows } = await pool.query(`
+    SELECT u.id, u.email, u.name, u.locale, u.role, u.created_at AS "createdAt",
+      COUNT(DISTINCT qa.id)::int AS "attempts",
+      COUNT(DISTINCT lp.lesson_id) FILTER (WHERE lp.completed)::int AS "completedLessons"
+    FROM users u
+    LEFT JOIN quiz_attempts qa ON qa.user_id = u.id
+    LEFT JOIN lesson_progress lp ON lp.user_id = u.id
+    GROUP BY u.id ORDER BY u.created_at DESC`)
+  return rows
+})
+
+app.get('/api/admin/subjects', { preHandler: [app.authenticate, requireAdmin] }, async () => {
+  const { rows } = await pool.query(`
+    SELECT s.id, s.title, s.description, s.icon, s.sort_order AS "sortOrder",
+      COUNT(l.id)::int AS "lessonsCount", COUNT(l.id) FILTER (WHERE l.required)::int AS "requiredLessonsCount"
+    FROM subjects s LEFT JOIN lessons l ON l.subject_id = s.id
+    GROUP BY s.id ORDER BY s.sort_order, s.title`)
+  return rows
+})
+
+app.post('/api/admin/subjects', { preHandler: [app.authenticate, requireAdmin] }, async (request, reply) => {
+  const body = adminSubjectSchema.safeParse(request.body)
+  if (!body.success) return reply.code(400).send({ error: 'VALIDATION_ERROR', message: 'Проверьте данные предмета.' })
+  const { id, title, description, icon, sortOrder } = body.data
+  const { rows } = await pool.query(`INSERT INTO subjects(id, title, description, icon, sort_order) VALUES ($1, $2, $3, $4, $5) RETURNING id, title, description, icon, sort_order AS "sortOrder"`, [id, title, description, icon ?? null, sortOrder])
+  return reply.code(201).send({ ...rows[0], lessonsCount: 0, requiredLessonsCount: 0 })
+})
+
+app.patch('/api/admin/subjects/:id', { preHandler: [app.authenticate, requireAdmin] }, async (request, reply) => {
+  const params = idSchema.safeParse(request.params)
+  const body = adminSubjectUpdateSchema.safeParse(request.body)
+  if (!params.success || !body.success) return reply.code(400).send({ error: 'VALIDATION_ERROR', message: 'Проверьте данные предмета.' })
+  const current = await pool.query('SELECT id, title, description, icon, sort_order AS "sortOrder" FROM subjects WHERE id = $1', [params.data.id])
+  if (!current.rows[0]) return reply.code(404).send({ error: 'NOT_FOUND', message: 'Предмет не найден.' })
+  const value = { ...current.rows[0], ...body.data }
+  const { rows } = await pool.query(`UPDATE subjects SET title = $2, description = $3, icon = $4, sort_order = $5 WHERE id = $1 RETURNING id, title, description, icon, sort_order AS "sortOrder"`, [params.data.id, value.title, value.description, value.icon ?? null, value.sortOrder])
+  return rows[0]
+})
+
+app.delete('/api/admin/subjects/:id', { preHandler: [app.authenticate, requireAdmin] }, async (request, reply) => {
+  const params = idSchema.safeParse(request.params)
+  if (!params.success) return reply.code(400).send({ error: 'VALIDATION_ERROR', message: 'Некорректный идентификатор.' })
+  const { rows } = await pool.query('DELETE FROM subjects WHERE id = $1 RETURNING id', [params.data.id])
+  if (!rows[0]) return reply.code(404).send({ error: 'NOT_FOUND', message: 'Предмет не найден.' })
+  return reply.code(204).send()
+})
+
+app.get('/api/admin/lessons', { preHandler: [app.authenticate, requireAdmin] }, async (request) => {
+  const query = z.object({ subjectId: slugSchema.optional() }).parse(request.query)
+  const { rows } = await pool.query(`
+    SELECT l.id, l.subject_id AS "subjectId", s.title AS "subjectTitle", l.title, l.description, l.duration,
+      l.required, l.notes, l.video_url AS "videoUrl", l.timecodes, l.sort_order AS "sortOrder", q.id AS "quizId", q.title AS "quizTitle"
+    FROM lessons l JOIN subjects s ON s.id = l.subject_id LEFT JOIN quizzes q ON q.lesson_id = l.id
+    WHERE ($1::text IS NULL OR l.subject_id = $1) ORDER BY s.sort_order, l.sort_order, l.title`, [query.subjectId ?? null])
+  return rows
+})
+
+app.post('/api/admin/lessons', { preHandler: [app.authenticate, requireAdmin] }, async (request, reply) => {
+  const body = adminLessonSchema.safeParse(request.body)
+  if (!body.success) return reply.code(400).send({ error: 'VALIDATION_ERROR', message: 'Проверьте данные урока.' })
+  const lesson = body.data
+  const { rows } = await pool.query(`
+    INSERT INTO lessons(id, subject_id, title, description, duration, video_url, required, notes, timecodes, sort_order)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10)
+    RETURNING id, subject_id AS "subjectId", title, description, duration, video_url AS "videoUrl", required, notes, timecodes, sort_order AS "sortOrder"`,
+    [lesson.id, lesson.subjectId, lesson.title, lesson.description, lesson.duration, lesson.videoUrl ?? null, lesson.required, lesson.notes ?? null, JSON.stringify(lesson.timecodes), lesson.sortOrder])
+  return reply.code(201).send(rows[0])
+})
+
+app.patch('/api/admin/lessons/:id', { preHandler: [app.authenticate, requireAdmin] }, async (request, reply) => {
+  const params = idSchema.safeParse(request.params)
+  const body = adminLessonUpdateSchema.safeParse(request.body)
+  if (!params.success || !body.success) return reply.code(400).send({ error: 'VALIDATION_ERROR', message: 'Проверьте данные урока.' })
+  const current = await pool.query(`SELECT id, subject_id AS "subjectId", title, description, duration, video_url AS "videoUrl", required, notes, timecodes, sort_order AS "sortOrder" FROM lessons WHERE id = $1`, [params.data.id])
+  if (!current.rows[0]) return reply.code(404).send({ error: 'NOT_FOUND', message: 'Урок не найден.' })
+  const lesson = { ...current.rows[0], ...body.data }
+  const { rows } = await pool.query(`
+    UPDATE lessons SET subject_id = $2, title = $3, description = $4, duration = $5, video_url = $6, required = $7, notes = $8, timecodes = $9::jsonb, sort_order = $10
+    WHERE id = $1
+    RETURNING id, subject_id AS "subjectId", title, description, duration, video_url AS "videoUrl", required, notes, timecodes, sort_order AS "sortOrder"`,
+    [params.data.id, lesson.subjectId, lesson.title, lesson.description, lesson.duration, lesson.videoUrl ?? null, lesson.required, lesson.notes ?? null, JSON.stringify(lesson.timecodes), lesson.sortOrder])
+  return rows[0]
+})
+
+app.delete('/api/admin/lessons/:id', { preHandler: [app.authenticate, requireAdmin] }, async (request, reply) => {
+  const params = idSchema.safeParse(request.params)
+  if (!params.success) return reply.code(400).send({ error: 'VALIDATION_ERROR', message: 'Некорректный идентификатор.' })
+  const { rows } = await pool.query('DELETE FROM lessons WHERE id = $1 RETURNING id', [params.data.id])
+  if (!rows[0]) return reply.code(404).send({ error: 'NOT_FOUND', message: 'Урок не найден.' })
+  return reply.code(204).send()
 })
 
 app.get('/api/dashboard', { preHandler: app.authenticate }, async (request) => {
@@ -246,6 +387,8 @@ app.setErrorHandler((error, request, reply) => {
   request.log.error(error)
   if (error instanceof z.ZodError) return reply.code(400).send({ error: 'VALIDATION_ERROR', message: 'Некорректные данные запроса.' })
   if (error instanceof Error && (error as Error & { statusCode?: number }).statusCode === 401) return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Требуется авторизация.' })
+  if (error instanceof Error && (error as Error & { code?: string }).code === '23505') return reply.code(409).send({ error: 'CONFLICT', message: 'Запись с таким идентификатором уже существует.' })
+  if (error instanceof Error && (error as Error & { code?: string }).code === '23503') return reply.code(400).send({ error: 'INVALID_REFERENCE', message: 'Связанная запись не найдена.' })
   return reply.code(500).send({ error: 'INTERNAL_ERROR', message: config.NODE_ENV === 'production' ? 'Внутренняя ошибка сервера.' : errorMessage(error) })
 })
 

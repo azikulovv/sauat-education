@@ -59,6 +59,14 @@ const user = computed(() => auth.user.value ?? currentStudent)
           <Library class="size-4" aria-hidden="true" />
           Предметы
         </NuxtLink>
+        <NuxtLink
+          v-if="auth.user.value?.role === 'admin'"
+          to="/admin"
+          class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-bg-subtle hover:text-text-primary"
+        >
+          <Settings class="size-4" aria-hidden="true" />
+          Админ-панель
+        </NuxtLink>
       </nav>
 
       <div class="border-t border-border p-4">

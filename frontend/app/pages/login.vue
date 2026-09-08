@@ -3,6 +3,7 @@ import { BookOpen, ShieldCheck } from 'lucide-vue-next'
 import { BaseCard, BaseContainer } from '~/shared/ui'
 import { LanguageSwitcher } from '~/features/language-switching'
 import { LoginForm } from '~/features/auth'
+import { useAuthStore } from '~/features/auth'
 
 definePageMeta({
   layout: 'default',
@@ -14,7 +15,8 @@ useHead({
   meta: [{ name: 'description', content: 'Войдите в Sauat Education и продолжите обучение.' }],
 })
 
-const handleLogin = () => navigateTo('/')
+const auth = useAuthStore()
+const handleLogin = () => navigateTo(auth.user.value?.role === 'admin' ? '/admin' : '/')
 </script>
 
 <template>
@@ -51,7 +53,7 @@ const handleLogin = () => navigateTo('/')
             </BaseCard>
 
             <p class="mt-5 text-center text-xs text-text-tertiary">
-              Демо-доступ: aliya.sadykova@example.com / Demo1234!
+              Демо-ученик: aliya.sadykova@example.com / Demo1234! · Администратор: admin@sauat-education.kz / Admin1234!
             </p>
           </div>
         </div>

@@ -10,6 +10,15 @@ const demoUser = {
   role: 'student',
 }
 
+const adminUser = {
+  id: '00000000-0000-0000-0000-000000000002',
+  email: 'admin@sauat-education.kz',
+  password: 'Admin1234!',
+  name: 'Администратор Sauat',
+  locale: 'ru',
+  role: 'admin',
+}
+
 const subjects = [
   ['subject-math', 'Математика', 'Алгебра, геометрия и подготовка к экзаменам.', 'calculator', 1],
   ['subject-history', 'История Казахстана', 'Ключевые события и личности от древности до современности.', 'landmark', 2],
@@ -68,6 +77,7 @@ const quizzes: QuizSeed[] = [
 
 export async function seedDatabase() {
   const passwordHash = await bcrypt.hash(demoUser.password, 12)
+  const adminPasswordHash = await bcrypt.hash(adminUser.password, 12)
 
   await withTransaction(async (client) => {
     await client.query(
@@ -75,6 +85,12 @@ export async function seedDatabase() {
        VALUES ($1, $2, $3, $4, $5, $6)
        ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash`,
       [demoUser.id, demoUser.email, passwordHash, demoUser.name, demoUser.locale, demoUser.role],
+    )
+    await client.query(
+      `INSERT INTO users(id, email, password_hash, name, locale, role)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash, role = EXCLUDED.role`,
+      [adminUser.id, adminUser.email, adminPasswordHash, adminUser.name, adminUser.locale, adminUser.role],
     )
 
     for (const subject of subjects) {

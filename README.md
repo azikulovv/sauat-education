@@ -8,7 +8,9 @@
 2. Запустите сервисы: `docker compose up --build`.
 3. Откройте http://localhost:3000.
 
-Демо-вход: `aliya.sadykova@example.com` / `Demo1234!`.
+Демо-вход ученика: `aliya.sadykova@example.com` / `Demo1234!`.
+
+Админ-вход: `admin@sauat-education.kz` / `Admin1234!`. Администратор открывает панель по адресу http://localhost:3000/admin и может создавать, редактировать и удалять предметы и уроки, а также просматривать метрики и пользователей.
 
 В Compose запускаются Nuxt frontend, TypeScript backend и PostgreSQL. Backend автоматически применяет миграцию и идемпотентный seed при старте. Проверка состояния: http://localhost:3001/api/health.
 
