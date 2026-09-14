@@ -304,7 +304,7 @@ resetLesson()
               <div class="grid grid-cols-2 gap-3"><BaseInput v-model="lessonDuration" type="number" label="Минут" min="1" required /><BaseInput v-model="lessonSortOrder" type="number" label="Порядок" min="0" /></div>
               <label class="flex items-center gap-2 text-sm font-semibold text-text-primary"><input v-model="lessonForm.required" type="checkbox" class="size-4 accent-primary" /> Обязательный урок</label>
               <div class="flex flex-col gap-1.5"><label class="text-label text-text-primary">Заметки</label><textarea v-model="lessonForm.notes" class="min-h-20 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none focus:border-primary" /></div>
-              <BaseInput v-model="lessonForm.videoUrl" label="Video URL" type="url" placeholder="https://..." />
+              <BaseInput v-model="lessonForm.videoUrl" label="Ссылка на видео" type="url" placeholder="https://youtube.com/watch?v=..." hint="Поддерживаются ссылки YouTube и прямые ссылки на видеофайлы." />
               <div class="flex flex-col gap-1.5"><label class="text-label text-text-primary">Timecodes JSON</label><textarea v-model="lessonTimecodes" class="min-h-28 w-full rounded-md border border-border bg-surface px-3 py-2 font-mono text-xs text-text-primary outline-none focus:border-primary" /></div>
               <div class="flex gap-2"><BaseButton type="submit" :loading="actionLoading" :leading-icon="lessonEditingId ? Save : Plus">{{ lessonEditingId ? 'Сохранить' : 'Создать' }}</BaseButton><BaseButton v-if="lessonEditingId" type="button" variant="ghost" @click="resetLesson">Отмена</BaseButton></div>
             </form>
